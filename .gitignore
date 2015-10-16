@@ -1,0 +1,17 @@
+.ve
+*.pyc
+.*.swp
+build/*
+logs/*
+*.db
+*~
+*.bak
+*.orig
+tags
+*.log
+
+.tox/
+.idea/
+*.out
+etc/config
+app/local.conf
