@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding=utf-8 -*-
-import functools 
+import functools
 
 from flask import request, g
 from app.utils.api_utils import api_error
 
-def validate_form(form_class)
-    def decorator(view_func)
+
+def validate_form(form_class):
+    def decorator(view_func):
         @functools.wraps(view_func)
         def inner(*args, **kwargs):
             if request.method == "GET":
@@ -19,4 +20,5 @@ def validate_form(form_class)
                 return api_error
 
         return inner
+
     return decorator

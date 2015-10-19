@@ -1,17 +1,23 @@
 # -*- coding=utf-8 -*-
 from datetime import datetime
 
-from flask import Blueprint, jsonify, redirect, \
-    request, url_for, session
-from flask.ext.login import current_user, current_app, \
-    logout_user, login_user, login_required, LoginManager
+from flask import (
+    Blueprint, jsonify, redirect,
+    request, url_for, session, g,
+)
+from flask.ext.login import (
+    current_user, current_app, logout_user,
+    login_user, login_required, LoginManager,
+)
+from mongoengine import Q
 from werkzeug.datastructures import MultiDict
 
 from app.core.models import User
 from app.core.forms import LoginForm, ResetPasswordForm, RegisterForm
-from app.utils.common_utils import trim
-from app.utils.core_utils import get_token
-from app.utils.api_utils import api_ok, api_error
+from app.decorators import validate_form
+from app.utils import (
+    trim, get_token, api_ok, api_error
+)
 
 __all__ = ['user']
 
@@ -34,17 +40,11 @@ def unauthorized_callback():
 
 @user.route("/")
 @user.route("/user/login/", methods=["GET", "POST"])
+@validate_form(LoginForm)
 def login():
-    if request.form:
-        args = request.form
-    else:
-        args = MultiDict(request.get_json(force=True))
-
-    form = LoginForm(args)
-    if not form.validate():
-        return api_error(10000, msg=dict(msg=form.errors))
-
-    user = User.objects.filter(user_name=trim(form.user_name.data)).first()
+    form = g.form
+    condition = Q(user_name=trim(form.user_name.data))
+    user = User.objects.filter(condition).first()
     if user is None:
         return api_error(10001)
 
@@ -54,7 +54,7 @@ def login():
     if not (user.is_authenticated() and user.is_active()):
         return api_error(10003)
 
-    remember_me = True if args.get('remember_me', '') else False
+    remember_me = True if form.remember_me.data else False
     login_user(user, remember=remember_me)
     User.objects(id=user.id).update_one(last_login=datetime.utcnow())
 
@@ -79,34 +79,21 @@ def logout():
 
 @user.route('/user/change_password/', methods=['POST'])
 @login_required
+@validate_form(ResetPasswordForm)
 def change_password():
-    if request.form:
-        args = request.form
-    else:
-        args = MultiDict(request.get_json(force=True))
+    form = g.form
 
-    if not args.get('old_password'):
-        return api_error(10004)
+    user = User.objects.filter(id=current_user.id).first()
+    if user is None:
+        return api_error(10005)
 
-    form = ResetPasswordForm(formdata=args)
-    if form.validate():
-        user = User.objects.filter(id=current_user.id).first()
-        if user is None:
-            return api_error(10005)
+    if not user.check_password(form.old_password.data):
+        return api_error(10006)
 
-        if not user.check_password(args.get('old_password')):
-            return api_error(10006)
+    user.change_password(form.new_password.data)
+    user.save()
+    return jsonify(success=True)
 
-        user.change_password(args.get('new_password'))
-        user.save()
-        return jsonify(success=True)
-
-    else:
-        errors = {}
-        for key, value in form.errors.iteritems():
-            errors[getattr(form, key).label.text] = value[0]
-
-        return api_error(10007, msg=errors.items())
 
 
 @user.route('/user/edit/', methods=['POST'])
@@ -126,36 +113,25 @@ def user_info():
 
 
 @user.route('/user/register/', methods=['POST'])
+@validate_form(RegisterForm)
 def register():
-    if request.form:
-        args = request.form
-    else:
-        args = MultiDict(request.get_json(force=True))
+    form = g.form
+    condition = Q(user_name=form.user_name.data)
+    if User.objects.filter(condition).first():
+        return api_error(code=10009)
 
-    form = RegisterForm(args)
-    if form.validate():
-        if User.objects.filter(user_name=form.user_name.data).first():
-            return api_error(code=10009)
+    obj = dict(
+        user_name=form.user_name.data,
+        password=form.password.data,
+        email=form.email.data,
+        phone=form.phone.data,
+        first_name=form.first_name.data,
+        last_name=form.last_name.data,
+        full_name=form.full_name.data,
+    )
+    user = User.objects.create(**obj)
+    user.change_password(form.password.data)
+    user.save()
 
-        obj = dict(
-            user_name=form.user_name.data,
-            password=form.password.data,
-            email=form.email.data,
-            phone=form.phone.data,
-            first_name=form.first_name.data,
-            last_name=form.last_name.data,
-            full_name=form.full_name.data,
-        )
-        try:
-            user = User.objects.create(**obj)
-            user.change_password(form.password.data)
-            user.save()
-            return api_ok(data=dict(user=user))
-        except Exception as e:
-            return api_error(10010, msg=str(e))
-    else:
-        errors = {}
-        for key, value in form.errors.iteritems():
-            errors[getattr(form, key).label.text] = value[0]
+    return api_ok(data=dict(user=user))
 
-        return api_error(10011, msg=errors.items())
