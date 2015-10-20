@@ -3,6 +3,8 @@
 import functools
 
 from flask import request, g
+from werkzeug.utils import MultiDict
+
 from app.utils.api_utils import api_error
 
 
@@ -13,11 +15,13 @@ def validate_form(form_class):
             if request.method == "GET":
                 formdata = request.args
             else:
-                formdata = request.form if request.form else request.json
+                formdata = request.form if request.form else \
+                    MultiDict(request.json(force=True))
 
-            form = form_class(form_data)
+            form = form_class(formdata)
             if not form.validate():
-                return api_error
+                return api_error(10013)
+            g.form = form
 
         return inner
 

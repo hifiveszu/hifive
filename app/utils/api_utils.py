@@ -9,7 +9,6 @@ def api_ok(data=None):
 
 
 def api_error(code=1, msg=''):
-    error = {}
     if msg is not None:
         error = dict(msg=msg)
     else:
