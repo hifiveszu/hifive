@@ -68,4 +68,3 @@ def configure_app(app, config_name):
     # 可以把 etc/server.example.conf 复制一份到 app/local.conf
     # 然后修改相应的配置项。app/local.conf 没有添加到版本库，所以不会出现冲突
     app.config.from_pyfile('local.conf', silent=True)
-    app.config.from_pyfile('error_code.py', silent=True)

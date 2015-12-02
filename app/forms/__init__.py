@@ -2,14 +2,14 @@
 import re
 
 from wtforms import Form
-from wtforms.fields import DateField, DateTimeField
+from wtforms.fields import DateField, DateTimeField, IntegerField
 from wtforms.validators import ValidationError, Regexp
 
 from app.utils import valid_object_id
 
 
 class JsonSerializableForm(Form):
-    def as_dict(self, exclude={}):
+    def to_dict(self, exclude={}):
         result = {}
         for field in self:
             if field.name in exclude:
@@ -21,11 +21,10 @@ class JsonSerializableForm(Form):
                 value = field.data
 
             result[field.name] = value
-
         return result
 
     def purify(self):
-        return dict((k, v) for k, v in self.as_dict().iteritems() if v)
+        return dict((k, v) for k, v in self.to_dict().iteritems() if v)
 
 
 class ObjectIdType(object):
@@ -43,6 +42,19 @@ class ObjectIdType(object):
 
         if not valid_object_id(field.data):
             raise ValidationError(self.message)
+
+
+class PageForm(Form):
+    pageIndex = IntegerField(default=1)
+    pageSize = IntegerField(default=10)
+
+    @property
+    def skip(self):
+        return (self.pageIndex.data - 1) * self.pageSize.data
+
+    @property
+    def limit(self):
+        return self.pageSize.data
 
 
 class ChineseMobileNo(Regexp):

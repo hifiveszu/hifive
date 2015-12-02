@@ -1,3 +1,4 @@
+#! -*- coding: utf-8 -*-
 import logging
 import os
 import requests
@@ -9,7 +10,7 @@ from flask.ext.pymongo import PyMongo
 from werkzeug.contrib.fixers import ProxyFix
 
 from app.config import configure_app
-from app.core.views import login_manager
+from app.views.core import login_manager
 
 mongo_engine = MongoEngine()
 pymongo = PyMongo()
@@ -31,13 +32,11 @@ def create_app(config_name):
 
 
 def register_routes(app):
-    from app.core.admin import admin
-    from app.core.views import user
-    from app.api.views import api
+    from app.views.core import core
+    from app.views.api import api
 
-    app.register_blueprint(user)
-    app.register_blueprint(admin, url_prefix="/admin")
-    app.register_blueprint(api, url_prefix="/api")
+    app.register_blueprint(core, url_prefix="/hifive")
+    app.register_blueprint(api, url_prefix="/hifive")
 
 
 def register_babel(app):

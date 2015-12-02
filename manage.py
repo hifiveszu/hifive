@@ -5,7 +5,7 @@ import sys
 
 from flask_script import Manager, Server
 from app import create_app
-from app.core.models import User
+from app.models.core import User
 
 if os.path.exists('etc/config'):
     with open('etc/config') as f:

@@ -14,10 +14,12 @@ class JsonSerializableForm(Form):
         for field in self:
             if field.name in exclude_keys:
                 continue
+
             if isinstance(file, (DateField, DateTimeField)):
                 value = field._value()
             else:
                 value = field.data
+
             result[field.name] = value
         return result
 

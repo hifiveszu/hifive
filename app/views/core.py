@@ -3,17 +3,16 @@ from datetime import datetime
 
 from flask import (
     Blueprint, jsonify, redirect,
-    request, url_for, session, g,
+    url_for, session, g,
 )
 from flask.ext.login import (
     current_user, current_app, logout_user,
     login_user, login_required, LoginManager,
 )
 from mongoengine import Q
-from werkzeug.datastructures import MultiDict
 
-from app.core.models import User
-from app.core.forms import LoginForm, ResetPasswordForm, RegisterForm
+from app.models import User
+from app.forms.core import LoginForm, ResetPasswordForm, RegisterForm
 from app.decorators import validate_form
 from app.utils import (
     trim, get_token, api_ok, api_error
@@ -27,6 +26,8 @@ login_manager.session_protection = 'strong'
 login_manager.login_view = 'user.login'
 login_manager.login_message = None
 
+core = Blueprint('core', __name__)
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -38,8 +39,8 @@ def unauthorized_callback():
     return redirect(url_for('user.login'))
 
 
-@user.route("/")
-@user.route("/user/login/", methods=["GET", "POST"])
+@core.route("/")
+@core.route("/user/login/", methods=["GET", "POST"])
 @validate_form(LoginForm)
 def login():
     form = g.form
@@ -63,7 +64,7 @@ def login():
     return res
 
 
-@user.route('/user/logout/', methods=["GET"])
+@core.route('/user/logout/', methods=["GET"])
 @login_required
 def logout():
     user_name = current_user.user_name
@@ -77,7 +78,7 @@ def logout():
     return res
 
 
-@user.route('/user/change_password/', methods=['POST'])
+@core.route('/user/change_password/', methods=['POST'])
 @login_required
 @validate_form(ResetPasswordForm)
 def change_password():
@@ -95,14 +96,13 @@ def change_password():
     return jsonify(success=True)
 
 
-
-@user.route('/user/edit/', methods=['POST'])
+@core.route('/user/edit/', methods=['POST'])
 @login_required
 def edit_userinfo():
     pass
 
 
-@user.route('/user/info/')
+@core.route('/user/info/')
 @login_required
 def user_info():
     user_info = User.objects.filter(id=current_user.id).first()
@@ -112,7 +112,7 @@ def user_info():
     return api_ok(data=dict(user_info=user_info))
 
 
-@user.route('/user/register/', methods=['POST'])
+@core.route('/user/register/', methods=['POST'])
 @validate_form(RegisterForm)
 def register():
     form = g.form
@@ -134,4 +134,3 @@ def register():
     user.save()
 
     return api_ok(data=dict(user=user))
-

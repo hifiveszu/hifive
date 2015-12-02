@@ -13,7 +13,7 @@ from wtforms.validators import (
 )
 from werkzeug import security
 
-from app.core.models import User
+from app.models import User
 
 
 class ResetPasswordForm(Form):
