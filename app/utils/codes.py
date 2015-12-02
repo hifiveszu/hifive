@@ -1,1 +1,7 @@
 #!-*- coding: utf-8 -*-
+
+# user module
+NOT_USER = 20001
+WRONG_PASSWORD = 20002
+UNAUTHENTICATED = 20003
+USER_EXISTED = 20004

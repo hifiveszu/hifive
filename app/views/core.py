@@ -15,7 +15,7 @@ from app.models import User
 from app.forms.core import LoginForm, ResetPasswordForm, RegisterForm
 from app.decorators import validate_form
 from app.utils import (
-    trim, get_token, api_ok, api_error
+    trim, get_token, ok_jsonify, fail_jsonify, codes
 )
 
 __all__ = ['user']
@@ -47,13 +47,13 @@ def login():
     condition = Q(user_name=trim(form.user_name.data))
     user = User.objects.filter(condition).first()
     if user is None:
-        return api_error(10001)
+        return fail_jsonify(code=codes.NOT_USER)
 
     if not user.check_password(trim(form.password.data)):
-        return api_error(10002)
+        return fail_jsonify(code=codes.WRONG_PASSWORD)
 
     if not (user.is_authenticated() and user.is_active()):
-        return api_error(10003)
+        return fail_jsonify(code=codes.UNAUTHENTICATED)
 
     remember_me = True if form.remember_me.data else False
     login_user(user, remember=remember_me)
@@ -86,14 +86,14 @@ def change_password():
 
     user = User.objects.filter(id=current_user.id).first()
     if user is None:
-        return api_error(10005)
+        return fail_jsonify(code=codes.NOT_USER)
 
     if not user.check_password(form.old_password.data):
-        return api_error(10006)
+        return fail_jsonify(code=codes.WRONG_PASSWORD)
 
     user.change_password(form.new_password.data)
     user.save()
-    return jsonify(success=True)
+    return ok_jsonify({})
 
 
 @core.route('/user/edit/', methods=['POST'])
@@ -107,9 +107,9 @@ def edit_userinfo():
 def user_info():
     user_info = User.objects.filter(id=current_user.id).first()
     if user_info is None:
-        return api_error(10008)
+        return fail_jsonify(code=codes.NOT_USER)
 
-    return api_ok(data=dict(user_info=user_info))
+    return ok_jsonify(data=dict(user_info=user_info))
 
 
 @core.route('/user/register/', methods=['POST'])
@@ -118,7 +118,7 @@ def register():
     form = g.form
     condition = Q(user_name=form.user_name.data)
     if User.objects.filter(condition).first():
-        return api_error(code=10009)
+        return fail_jsonify(code=codes.USER_EXISTED)
 
     obj = dict(
         user_name=form.user_name.data,
@@ -129,8 +129,9 @@ def register():
         last_name=form.last_name.data,
         full_name=form.full_name.data,
     )
+
     user = User.objects.create(**obj)
     user.change_password(form.password.data)
     user.save()
 
-    return api_ok(data=dict(user=user))
+    return ok_jsonify(data=dict(user=user))

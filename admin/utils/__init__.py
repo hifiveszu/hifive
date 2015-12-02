@@ -1,7 +1,4 @@
 #! -*- coding: utf-8 -*-
-
-__author__ = 'KittoZheng'
-
 import functools
 
 from flask import current_app as app

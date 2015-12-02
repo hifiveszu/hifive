@@ -42,13 +42,13 @@ class ObjectIdType(object):
 
 
 class PageForm(Form):
-    pageIndex = IntegerField(default=1)
-    pageSize = IntegerField(default=10)
+    page = IntegerField(default=1)
+    page_size = IntegerField(default=10)
 
     @property
     def skip(self):
-        return (self.pageIndex.data - 1) * self.pageSize.data
+        return (self.page.data - 1) * self.page_size.data
 
     @property
     def limit(self):
-        return self.pageSize.data
+        return self.page_size.data

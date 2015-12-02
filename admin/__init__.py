@@ -1,5 +1,4 @@
 #! -*- coding=utf-8 -*-
-
 from flask import Flask
 from werkzeug.routing import BaseConverter
 from werkzeug.contrib.fixers import ProxyFix
